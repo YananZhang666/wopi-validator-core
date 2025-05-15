@@ -118,6 +118,36 @@
       </Requests>
     </TestCase>
 
+    <TestCase Name="GetLockPrereq" Category="WopiCore">
+      <Description>
+        Prereq WOPI Validation test to check if host declares support for GetLock operation.
+      </Description>
+      <Requests>
+        <CheckFileInfo>
+          <Validators>
+            <JsonResponseContentValidator>
+              <BooleanProperty Name="SupportsGetLock" ExpectedValue="true" IsRequired="true"/>
+            </JsonResponseContentValidator>
+          </Validators>
+        </CheckFileInfo>
+      </Requests>
+    </TestCase>
+
+    <TestCase Name="ExtendedLockLengthPrereq" Category="WopiCore">
+      <Description>
+        Prereq WOPI Validation test to check if host declares support for extended lock lengths.
+      </Description>
+      <Requests>
+        <CheckFileInfo>
+          <Validators>
+            <JsonResponseContentValidator>
+              <BooleanProperty Name="SupportsExtendedLockLength" ExpectedValue="true" IsRequired="true" />
+            </JsonResponseContentValidator>
+          </Validators>
+        </CheckFileInfo>
+      </Requests>
+    </TestCase>
+    
     <TestCase Name="FileEditingPrereq" Document="WordBlankDocument" Category="WopiCore">
       <Description>
         Prereq WOPI Validation test to check if host declares support for PutFile/PutRelativeFile operations.
@@ -1748,6 +1778,100 @@
     </TestCases>
   </TestGroup>
 
+  <TestGroup Name="GetLock">
+    <PrereqTests>
+      <PrereqTest>WopiValidatorPrereq</PrereqTest>
+      <PrereqTest>FileEditingPrereq</PrereqTest>
+      <PrereqTest>LocksPrereq</PrereqTest>
+      <PrereqTest>GetLockPrereq</PrereqTest>
+    </PrereqTests>
+    <TestCases>
+      <!-- /files/GetLock -->
+      <TestCase Name="files.GetLock" Category="WopiCore">
+        <Description>
+          Tests the standard GetLock flow; Lock, GetLock, then Unlock.
+        </Description>
+        <Requests>
+          <Lock Lock="LockString" />
+          <GetLock>
+            <Validators>
+              <ResponseHeaderValidator Header="X-WOPI-Lock" ExpectedValue="LockString" IsRequired="true" ShouldMatch="true" />
+            </Validators>
+          </GetLock>
+        </Requests>
+        <CleanupRequests>
+          <Unlock Lock="LockString" />
+        </CleanupRequests>
+      </TestCase>
+
+      <TestCase Name="files.GetLockAfterChange" Category="WopiCore">
+        <Description>
+          Tests that the lock ID GetLock returns changes after it's changed by UnlockAndRelock.
+        </Description>
+        <Requests>
+          <Lock Lock="LockString" />
+          <UnlockAndRelock NewLock="NewLockString" OldLock="LockString" />
+          <GetLock>
+            <Validators>
+              <ResponseHeaderValidator Header="X-WOPI-Lock" ExpectedValue="NewLockString" IsRequired="true" ShouldMatch="true" />
+            </Validators>
+          </GetLock>
+        </Requests>
+        <CleanupRequests>
+          <Unlock Lock="NewLockString" />
+        </CleanupRequests>
+      </TestCase>
+
+      <TestCase Name="files.GetLockOnUnlockedFile" Category="WopiCore">
+        <Description>
+          Tests GetLock after a file has been locked and unlocked.
+        </Description>
+        <Requests>
+          <Lock Lock="LockString" />
+          <Unlock Lock="LockString" />
+          <GetLock>
+            <Validators>
+              <ResponseHeaderValidator Header="X-WOPI-Lock" ExpectedValue="" IsRequired="true" ShouldMatch="true" />
+            </Validators>
+          </GetLock>
+        </Requests>
+      </TestCase>
+    </TestCases>
+  </TestGroup>
+
+  <TestGroup Name="ExtendedLockLength">
+    <PrereqTests>
+      <PrereqTest>WopiValidatorPrereq</PrereqTest>
+      <PrereqTest>FileEditingPrereq</PrereqTest>
+      <PrereqTest>LocksPrereq</PrereqTest>
+      <PrereqTest>GetLockPrereq</PrereqTest>
+      <PrereqTest>ExtendedLockLengthPrereq</PrereqTest>
+    </PrereqTests>
+    <TestCases>
+      <!-- /files/Lock: test new 1024 character lock length -->
+      <TestCase Name="files.ExtendedLockLengthValidation" Category="WopiCore">
+        <Description>
+          Tests that the WOPI host is capable of handling WOPI Lock IDs of 1024 characters.
+        </Description>
+        <Requests>
+          <CheckFileInfo>
+            <Validators>
+              <JsonResponseContentValidator>
+                <BooleanProperty Name="SupportsExtendedLockLength" ExpectedValue="true" IsRequired="true" />
+              </JsonResponseContentValidator>
+            </Validators>
+          </CheckFileInfo>
+          <Lock Lock="1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345612345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234561234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456" />
+          <GetLock />
+          <Unlock Lock="1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345612345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234561234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456" />
+        </Requests>
+        <CleanupRequests>
+          <Unlock Lock="1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345612345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234561234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456" />
+        </CleanupRequests>
+      </TestCase>
+    </TestCases>
+  </TestGroup>
+  
   <TestGroup Name="X-WOPI-LockHeaderReturnedWhenLocksLockMismatch">
     <PrereqTests>
       <PrereqTest>LocksPrereq</PrereqTest>
